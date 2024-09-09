@@ -5,6 +5,7 @@ This project is an example of creating a "Hello, World!" AWS Lambda function usi
 ## Project Structure
 
 - `main.tf`: Terraform configuration file to create the IAM role and Lambda function.
+- `variables.tf`: Terraform variables file.
 - `lambda_function.py`: Python code for the Lambda function.
 - `Dockerfile`: Dockerfile to create a container for local testing of the Lambda function.
 - `requirements.txt`: Python dependencies for the Lambda function.
@@ -26,10 +27,19 @@ This project is an example of creating a "Hello, World!" AWS Lambda function usi
     ```sh
     terraform init
     ```
-
-2. **Apply Terraform Configuration:**
+   
+2. **Plan Terraform Configuration:**<br>
+Run the following command to see the resources that Terraform will create. 
+Use argument `-out=tfplan` to save the plan to a file, which can be used to apply the configuration.
     ```sh
-    terraform apply
+    terraform plan -out=tfplan
+    ```
+
+
+3. **Apply Terraform Configuration:**<br>
+Use the plan file created in the previous step to apply the configuration.
+    ```sh
+    terraform apply tfplan
     ```
 
 ### Local Testing with Docker
@@ -80,4 +90,3 @@ CMD [ "lambda_function.handler" ]
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-```

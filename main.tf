@@ -38,3 +38,50 @@ resource "aws_lambda_function" "test_lambda" {
   # Runtime environment for the Lambda function
   runtime = var.lambda_runtime
 }
+
+# Create the API Gateway REST API using the api_ + lambda_function_name
+resource "aws_api_gateway_rest_api" "api" {
+  name        = var.lambda_function_name
+  description = "API to trigger Lambda"
+}
+
+# Create a resource under the API path /<lambda_function_name>
+resource "aws_api_gateway_resource" "resource" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  path_part   = var.lambda_function_name
+}
+
+# Create a method for the resource
+resource "aws_api_gateway_method" "method" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.resource.id
+  http_method   = "POST"
+  authorization = "NONE"
+}
+
+# Integrate the method with the Lambda function
+resource "aws_api_gateway_integration" "integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.resource.id
+  http_method             = aws_api_gateway_method.method.http_method
+  type                    = "AWS_PROXY"
+  integration_http_method = "POST"
+  uri                     = aws_lambda_function.test_lambda.invoke_arn
+}
+
+# Deploy the API
+resource "aws_api_gateway_deployment" "deployment" {
+  depends_on = [aws_api_gateway_integration.integration]
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  stage_name  = "prod"
+}
+
+# Grant API Gateway permission to invoke the Lambda function
+resource "aws_lambda_permission" "api_gateway_invoke" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.test_lambda.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
+}
